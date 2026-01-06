@@ -1,5 +1,5 @@
 {
-  description = "A beginning of an awesome project bootstrapped with github:bleur-org/templates";
+  description = "Relago";
 
   inputs = {
     # Stable for keeping thins clean
@@ -32,6 +32,6 @@
     })
     // {
       # NixOS module (deployment)
-      nixosModules.server = import ./module.nix self;
+      nixosModules.relago = import ./module.nix self;
     };
 }

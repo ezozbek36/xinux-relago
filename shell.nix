@@ -44,20 +44,20 @@ in
       rust-analyzer
       cargo-watch
 
-      # Databases & ORM
-      postgresql
-      diesel-cli
-      diesel-cli-ext
-
       # A few utils
       just
+
+      systemd
+      pkg-config
     ];
 
     # Runtime dependencies which will be shipped
     # with nix package
     buildInputs = with pkgs; [
       openssl
-      # libressl
+      dbus
+      systemd
+      pkg-config
     ];
 
     # Set Environment Variables
@@ -75,8 +75,6 @@ in
     ];
 
     shellHook = ''
-      source ./.github/scripts/init-db.sh
-      source ./.github/scripts/init-service.sh
     '';
 
     ####################################################################

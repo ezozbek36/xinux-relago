@@ -23,7 +23,6 @@ in
     pname = manifest.name;
     version = manifest.version;
 
-    # Your govnocodes
     src = pkgs.lib.cleanSource ./.;
 
     cargoLock = {
@@ -54,20 +53,26 @@ in
       clippy
 
       # Other compile time dependencies
-      postgresql
+      pkg-config
+
+      zlib
+      # libssl
     ];
 
     # Runtime dependencies which will be shipped
     # with nix package
     buildInputs = with pkgs; [
       openssl
+      pkg-config
       # libressl
+
+      zlib
     ];
 
-    fixupPhase = ''
-      mkdir -p $out/mgrs
-      cp -R ./crates/database/* $out/mgrs
-    '';
+    # fixupPhase = ''
+    #   mkdir -p $out/mgrs
+    #   cp -R ./crates/database/* $out/mgrs
+    # '';
 
     # Set Environment Variables
     RUST_BACKTRACE = 1;
@@ -82,13 +87,13 @@ in
       pkgs.llvmPackages.llvm
     ];
 
-    meta = with lib; {
-      homepage = manifest.homepage;
-      description = manifest.description;
-      # https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix
-      license = with lib.licenses; [asl20 mit];
-      platforms = with platforms; linux ++ darwin;
-      mainProgram = "server";
-      maintainers = [lib.maintainers.orzklv];
-    };
+    # meta = with lib; {
+      # homepage = manifest.homepage;
+      # description = manifest.description;
+    #   #https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix
+      # license = with lib.licenses; [asl20 mit];
+      # platforms = with platforms; linux ++ darwin;
+      # mainProgram = "server";
+      # maintainers = [lib.maintainers.orzklv];
+    # };
   }
