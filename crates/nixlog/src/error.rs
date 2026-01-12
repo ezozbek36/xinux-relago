@@ -116,13 +116,10 @@ pub fn process_nix_error(output: &str) -> anyhow::Result<()> {
     if let Some(mut error) = NixBuildError::from_output(output) {
         tracing::info!("Detected nix build error: {}", error.drv_path);
 
-        
         if let Err(e) = error.fetch_full_log() {
             tracing::warn!("Failed get log: {}", e);
         }
 
-
-        
         match error.save(LOG_DIR) {
             Ok(path) => {
                 println!("\n[relago] Crash report saved: {}", path.display());
