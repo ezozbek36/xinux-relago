@@ -66,7 +66,7 @@ flake: {
         ExecReload = "${pkgs.coreutils}/bin/kill -s HUP $MAINPID";
         StateDirectory = cfg.user;
         StateDirectoryMode = "0750";
-        type = "dbus";
+        Type = "dbus";
         # Access write directories
         # ReadWritePaths = [cfg.dataDir "/run/postgresql"];
         CapabilityBoundingSet = [
