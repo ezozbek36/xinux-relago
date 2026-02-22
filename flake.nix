@@ -40,7 +40,7 @@
        in rec {
 
         # Nix script formatter
-        formatter = pkgs.nixfmt-rfc-style;
+        formatter = pkgs.nixfmt;
 
         # Development environment
         devShells.default = import ./shell.nix  {inherit self pkgs craneLib;};
