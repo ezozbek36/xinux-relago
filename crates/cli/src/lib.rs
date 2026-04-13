@@ -1,22 +1,16 @@
-use clap::{arg, command, Arg, ArgAction, Command};
+use clap::{arg, command, Arg, ArgAction, Args, Command, FromArgMatches};
 
 use notify::window::{model::App, Modal};
-use report;
-use std::{
-    env, fs,
-    io::{BufRead, ErrorKind},
-    path::PathBuf,
-    process,
-};
+use std::{env, io::BufRead, process};
 use subprocess::Exec;
-use utils::config::{Config, CONFIG};
+use utils::config::{Config, ConfigLayer, CONFIG};
 
 const CONFIG_FILE: &str = "/var/lib/relago/config.toml";
 
 pub fn run() -> anyhow::Result<()> {
-    match fs::File::open(&CONFIG_FILE) {
-        Ok(_) => {
-            CONFIG.set(move || Config::get_config(PathBuf::from(&CONFIG_FILE)));
+    match Config::get_config(CONFIG_FILE) {
+        Ok(config) => {
+            CONFIG.set(move || config.clone());
         }
         Err(e) => {
             println!("An error occurred: {}", e);
@@ -65,6 +59,9 @@ pub fn run() -> anyhow::Result<()> {
                         .help("Path to NixOS configuration directory (e.g., ~/nix-conf)"),
                 ),
         )
+        .subcommand(ConfigLayer::augment_args(
+            Command::new("configure").about("Manage configuration via CLI"),
+        ))
         .subcommand(
             Command::new("reporter")
                 .about("Launch crash reporter GUI")
@@ -159,11 +156,16 @@ pub fn run() -> anyhow::Result<()> {
 
             let app_id = format!("org.relm4.Reporter.p{}", std::process::id());
 
-            let app = relm4::RelmApp::new(&app_id)
+            relm4::RelmApp::new(&app_id)
                 .with_args(vec![])
                 .run::<App>(modal);
         }
-        _ => println!("`None`"),
+        Some(("configure", sub_matches)) => {
+            Config::save_config(CONFIG_FILE, ConfigLayer::from_arg_matches(sub_matches)?)?
+        }
+        _ => {
+            println!("`None`")
+        }
     }
 
     Ok(())
