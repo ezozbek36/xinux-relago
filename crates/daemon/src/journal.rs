@@ -1,7 +1,7 @@
 //! Follow future journal log messages and print up to 100 of them.
 use std::sync::Arc;
 
-use anyhow::anyhow;
+use anyhow::Context;
 use gui::window::Modal;
 use systemd::journal::{self, JournalSeek};
 use tokio::sync::Mutex;

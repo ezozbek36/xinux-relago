@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::{arg, command, Arg, ArgAction, Args, Command, FromArgMatches};
 
 use daemon::journal;
