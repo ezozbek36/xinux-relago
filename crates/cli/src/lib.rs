@@ -1,5 +1,6 @@
 use clap::{arg, command, Arg, ArgAction, Args, Command, FromArgMatches};
 
+use anyhow::Context;
 use notify::window::{model::App, Modal};
 use std::{env, io::BufRead, process};
 use subprocess::Exec;
@@ -99,10 +100,8 @@ pub fn run() -> anyhow::Result<()> {
                 .unwrap_or_default()
                 .map(|v| v.as_str())
                 .collect::<Vec<_>>();
-            match cmd_exec(r[0]) {
-                Err(_) => println!("Cooked"),
-                Ok(_) => println!("exec"),
-            }
+
+            cmd_exec(r[0])?
         }
         Some(("report", sub_matches)) => {
             let rep: String = sub_matches
@@ -132,7 +131,7 @@ pub fn run() -> anyhow::Result<()> {
 
             println!("{:?}", sub_matches.try_get_raw("NAME"));
             println!("Relago daemon application is started without fuckery!!!");
-            let _ = daemon::journal::run();
+            daemon::journal::run()?;
         }
         Some(("reporter", sub_matches)) => {
             let options = ["unit", "exe", "message"];
@@ -174,29 +173,22 @@ pub fn run() -> anyhow::Result<()> {
 fn cmd_exec(cmd: &str) -> anyhow::Result<()> {
     let cm = Exec::shell(cmd);
 
-    match cm.clone().capture() {
-        Ok(capture) => {
-            if !capture.success() {
-                let mut collected_output = String::new();
+    let capture = cm
+        .clone()
+        .capture()
+        .context("Failed to capture command output")?;
 
-                let v = cm.stream_stderr()?;
-                let reader = std::io::BufReader::new(v);
-                for line in reader.lines() {
-                    match line {
-                        Ok(l) => {
-                            // println!("Line :{}", l);
-                            collected_output.push_str(&l);
-                        }
-                        Err(e) => print!("Error:{}", e),
-                    }
-                }
+    if !capture.success() {
+        let mut collected_output = String::new();
 
-                // let _ = NixErr::process_nix_error(&collected_output);
-            }
+        let v = cm.stream_stderr()?;
+        let reader = std::io::BufReader::new(v);
+        for line in reader.lines() {
+            let l = line.context("Failed to read stderr line")?;
+            collected_output.push_str(&l);
         }
-        Err(e) => {
-            print!("{}", e)
-        }
+
+        // let _ = NixErr::process_nix_error(&collected_output);
     }
 
     Ok(())
