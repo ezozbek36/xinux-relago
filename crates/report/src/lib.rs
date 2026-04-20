@@ -1,7 +1,9 @@
 pub mod compress;
+pub mod encrypt;
 pub mod info;
 
 use compress as cmp;
+use encrypt as enc;
 use std::fs::{self, File};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -20,6 +22,9 @@ pub enum ReportError {
 
     #[error("System error: {0}")]
     System(String),
+
+    #[error("PathBuf error")]
+    PathBufErr,
 }
 
 pub struct Report {
@@ -30,8 +35,14 @@ pub fn run(
     output_dir: &str,
     nixos_config_path: Option<&str>,
     recent_entries: Option<usize>,
+    public_key_path: Option<&str>,
 ) -> anyhow::Result<()> {
-    create_report(output_dir, nixos_config_path, recent_entries)?;
+    create_report(
+        output_dir,
+        nixos_config_path,
+        recent_entries,
+        public_key_path,
+    )?;
     Ok(())
 }
 
@@ -39,6 +50,7 @@ pub fn create_report(
     output_dir: &str,
     nixos_config_path: Option<&str>,
     recent_entries: Option<usize>,
+    public_key_path: Option<&str>,
 ) -> Result<Report, ReportError> {
     let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
     let report_dir = PathBuf::from(&output_dir).join(format!("report_{}", timestamp));
@@ -87,10 +99,9 @@ pub fn create_report(
             println!("NixOS config copied: {}", dest.display());
         }
     }
-    if system_info
-        .system_name
-        .is_some_and(|name| name == "XinuxOS")
-    {
+    let key_path = public_key_path.map(|p| shellexpand::tilde(p).to_string());
+
+    if system_info.system_name.is_some_and(|name| name == "XinuxOS") {
         let src = CONFIG.get().nix_config.clone();
         let dest = report_dir.join(CONFIG.get().nix_config.clone());
         info::copy_dir_recursive(&src, &dest).map_err(|e| ReportError::System(e.to_string()))?;

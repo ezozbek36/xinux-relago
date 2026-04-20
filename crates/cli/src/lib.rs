@@ -4,9 +4,12 @@ use clap::{arg, command, Arg, ArgAction, Args, Command, FromArgMatches};
 use daemon::journal;
 use gui::start_listener;
 use report;
-use std::{env, fs, io::BufRead, path::PathBuf, process};
+use std::{env, io::BufRead, process};
 use subprocess::Exec;
-use utils::config::{Config, ConfigLayer, CONFIG};
+use utils::{
+    config::{Config, ConfigLayer, CONFIG},
+    setup_key,
+};
 
 const CONFIG_FILE: &str = "/var/lib/relago/config.toml";
 
@@ -60,6 +63,13 @@ pub fn run() -> anyhow::Result<()> {
                         .long("nixos-config")
                         .value_name("PATH")
                         .help("Path to NixOS configuration directory (e.g., ~/nix-conf)"),
+                )
+                .arg(
+                    Arg::new("encrypt-key")
+                        .short('e')
+                        .long("encrypt-key")
+                        .value_name("PATH")
+                        .help("Path to PGP public key file for encrypting the report"),
                 ),
         )
         .subcommand(ConfigLayer::augment_args(
@@ -93,6 +103,7 @@ pub fn run() -> anyhow::Result<()> {
                         .default_value("Coredump"),
                 ),
         )
+        .subcommand(Command::new("setup-key").about("Setup GPG keys"))
         .get_matches();
 
     match matches.subcommand() {
@@ -120,8 +131,12 @@ pub fn run() -> anyhow::Result<()> {
                 .get_one::<String>("recent")
                 .and_then(|s| s.parse::<usize>().ok());
 
+            let encrypt_key = sub_matches
+                .get_one::<String>("encrypt-key")
+                .map(|s| s.as_str());
+
             // report::create_report(rep, nixos_config, recent_entries)?;
-            report::run(rep.as_str(), nixos_config, recent_entries)?
+            report::run(rep.as_str(), nixos_config, recent_entries, encrypt_key)?
         }
         Some(("daemon", _sub_matches)) => {
             println!("Relago daemon application is started without fuckery!!!");
@@ -159,6 +174,9 @@ pub fn run() -> anyhow::Result<()> {
         }
         Some(("configure", sub_matches)) => {
             Config::save_config(CONFIG_FILE, ConfigLayer::from_arg_matches(sub_matches)?)?
+        }
+        Some(("setup-key", _sub_matches)) => {
+            setup_key::init();
         }
         _ => {
             println!("`None`")
