@@ -4,7 +4,7 @@ use futures_util::FutureExt;
 use relm4::ComponentSender;
 use report::create_report;
 use reqwest::blocking::multipart;
-use std::{error::Error, sync::Arc};
+use std::{sync::Arc};
 use utils::config::CONFIG;
 
 pub fn run(sender: ComponentSender<App>, context: Option<String>) {
@@ -96,10 +96,7 @@ pub fn run(sender: ComponentSender<App>, context: Option<String>) {
     });
 }
 
-pub fn upload(
-    file_path: String,
-    context: Option<String>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub fn upload(file_path: String, context: Option<String>) -> anyhow::Result<()> {
     let server = CONFIG.get().server.clone();
 
     let mut form = multipart::Form::new().file("report", file_path)?;
@@ -112,5 +109,6 @@ pub fn upload(
         .post(format!("{}/upload/report", &server))
         .multipart(form)
         .send()?;
+
     Ok(())
 }
